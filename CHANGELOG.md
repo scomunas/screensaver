@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.3] - 2026-05-24
+
+### Changed
+- **Total IP and Port Parameterization**: Reordered `.env` and `.env.example` configurations to group database, frontend, backend, and Synology IP/Port variables.
+- **Parametric Compose Layout**: Removed all hardcoded IP and port definitions inside root `docker-compose.yml` and `synology/docker-compose.yml`, driving container exposures and backend bindings dynamically from `.env`.
+- **Database Connection Port Parameterization**: Updated psycopg2 DB configurations inside `backend/config.py` and `synology/main.py` to parse `DB_PORT` and pass it to connection handlers.
+- **Port Naming Standardisation**: Unified port variables into explicit `BACKEND_PORT`, `SYNOLOGY_PORT`, `FRONTEND_PORT`, and `DB_PORT` overrides.
+
 ## [v0.0.2] - 2026-05-24 (Initial Release)
 
 ### Added

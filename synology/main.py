@@ -48,20 +48,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- ENVIRONMENT CONFIGURATION ---
-DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_HOST = os.getenv("DB_IP", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
 DB_NAME = os.getenv("DB_NAME", "screensaver")
 DB_USER = os.getenv("DB_USER", "screensaver_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "screensaver_pass")
 
 DB_CONFIG = {
     "host": DB_HOST,
+    "port": DB_PORT,
     "database": DB_NAME,
     "user": DB_USER,
     "password": DB_PASSWORD
 }
 
 API_KEY = os.getenv("API_KEY", "my_secure_screensaver_key")
-PORT = int(os.getenv("SYNOLOGY_PORT", 9090))
+PORT = int(os.getenv("SYNOLOGY_PORT", 9092))
 BUFFER_SIZE = int(os.getenv("BUFFER_SIZE", 1000))
 
 def clean_env_list(env_key, default):

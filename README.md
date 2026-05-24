@@ -1,18 +1,18 @@
-# Synology & Proxmox Photo Screensaver (v0.0.2)
+# Synology & Proxmox Photo Screensaver (v0.0.3)
 
 A modern, clean, and adaptive fullscreen photo screensaver designed for Smart TVs. It uses a split architecture to keep files secure on your Synology NAS while running database and web operations on your Proxmox server.
 
 ```mermaid
 graph TD
-    subgraph Proxmox Server
-        FE[Frontend: Nginx] -->|1. Fetch Random Metadata| BE[Backend: FastAPI]
-        BE -->|Query Meta| DB[(PostgreSQL)]
+    subgraph Proxmox ["Proxmox Server"]
+        FE["Frontend: Nginx"] -->|1. Fetch Random Metadata| BE["Backend: FastAPI"]
+        BE -->|Query Meta| DB["PostgreSQL Database"]
     end
-    subgraph Synology NAS (Native Linux)
-        FE -->|2. Stream Photo File| SYN[Synology API: FastAPI]
-        SYN -->|Read File| Storage[NAS Disk Storage]
+    subgraph Synology ["Synology NAS (Native Linux)"]
+        FE -->|2. Stream Photo File| SYN["Synology API: FastAPI"]
+        SYN -->|Read File| Storage["NAS Disk Storage"]
         SYN -->|Read Path from DB| DB
-        Scanner[manual_scan.py] -->|Crawl & Index EXIF| DB
+        Scanner["manual_scan.py"] -->|Crawl & Index EXIF| DB
     end
 ```
 

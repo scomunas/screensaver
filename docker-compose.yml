@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${DB_USER:-screensaver_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-screensaver_pass}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -21,13 +21,14 @@ services:
     container_name: screensaver-backend
     restart: always
     ports:
-      - "${BACKEND_PORT:-9091}:${BACKEND_PORT:-9091}"
+      - "${BACKEND_PORT:-9090}:${BACKEND_PORT:-9090}"
     environment:
-      - DB_HOST=db
+      - DB_HOST=${DB_IP:-db}
+      - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-screensaver}
       - DB_USER=${DB_USER:-screensaver_user}
       - DB_PASSWORD=${DB_PASSWORD:-screensaver_pass}
-      - PORT=${BACKEND_PORT:-9091}
+      - PORT=${BACKEND_PORT:-9090}
     depends_on:
       - db
 
@@ -38,10 +39,10 @@ services:
     container_name: screensaver-frontend
     restart: always
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:80"
     environment:
-      - BACKEND_URL=http://${BACKEND_IP:-localhost}:${BACKEND_PORT:-9091}
-      - SYNOLOGY_URL=http://${SYNOLOGY_IP:-localhost}:${SYNOLOGY_PORT:-9090}
+      - BACKEND_URL=http://${BACKEND_IP:-localhost}:${BACKEND_PORT:-9090}
+      - SYNOLOGY_URL=http://${SYNOLOGY_IP:-localhost}:${SYNOLOGY_PORT:-9092}
       - API_KEY=${API_KEY:-my_secure_screensaver_key}
     volumes:
       # Mount the local frontend directory for real-time adjustments
