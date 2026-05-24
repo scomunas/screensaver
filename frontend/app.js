@@ -31,7 +31,6 @@ const dateEl = document.getElementById('digital-date');
 
 const infoOverlay = document.getElementById('info-overlay');
 const photoDirectory = document.getElementById('photo-directory');
-const photoTitle = document.getElementById('photo-title');
 const metadataStrip = document.getElementById('metadata-strip');
 const exifStrip = document.getElementById('exif-strip');
 
@@ -328,8 +327,7 @@ async function advanceSlideshow() {
         displayPhoto(photoData);
     } catch (error) {
         console.error("Failed to load random photo:", error);
-        photoTitle.textContent = "Error loading photos from NAS";
-        photoDirectory.textContent = "Error";
+        photoDirectory.textContent = "Error loading photos from NAS";
     }
 }
 
@@ -371,9 +369,8 @@ function displayPhoto(photoData) {
 
 // --- UPDATE METADATA CARD ---
 function updateInfoCard(photoData) {
-    // Set directory and title
+    // Set directory
     photoDirectory.textContent = photoData.directory;
-    photoTitle.textContent = photoData.file_name;
     
     // Clean up older tags
     metadataStrip.classList.add('hidden');

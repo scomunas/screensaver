@@ -28,7 +28,7 @@ services:
       - DB_NAME=${DB_NAME:-screensaver}
       - DB_USER=${DB_USER:-screensaver_user}
       - DB_PASSWORD=${DB_PASSWORD:-screensaver_pass}
-      - PORT=${BACKEND_PORT:-9090}
+      - BACKEND_PORT=${BACKEND_PORT:-9090}
     depends_on:
       - db
 

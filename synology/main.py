@@ -259,9 +259,9 @@ def process_scan(scan_id: str, root_path: str):
                             # Photo unchanged, skip processing
                             continue
 
-                        rel_dir = os.path.relpath(root, root_path)
-                        if rel_dir == ".":
-                            rel_dir = "Root"
+                        rel_dir = os.path.basename(root)
+                        if not rel_dir:
+                            rel_dir = "Photos"
                         
                         photo_buffer.append((
                             scan_id, full_path, name, rel_dir, current_size,

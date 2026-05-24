@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - **Parametric Compose Layout**: Removed all hardcoded IP and port definitions inside root `docker-compose.yml` and `synology/docker-compose.yml`, driving container exposures and backend bindings dynamically from `.env`.
 - **Database Connection Port Parameterization**: Updated psycopg2 DB configurations inside `backend/config.py` and `synology/main.py` to parse `DB_PORT` and pass it to connection handlers.
 - **Port Naming Standardisation**: Unified port variables into explicit `BACKEND_PORT`, `SYNOLOGY_PORT`, `FRONTEND_PORT`, and `DB_PORT` overrides.
+- **Directory Field Scope**: Configured the Synology scanner to save only the immediate parent folder name in the database `directory` field, rather than the complete relative path.
+- **Removed Filename from UI**: Cleaned up the frontend glassmorphic information card by removing the large photo filename header.
 
 ## [v0.0.2] - 2026-05-24 (Initial Release)
 
