@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  agent:
+    build: .
+    container_name: screensaver-synology-agent
+    restart: always
+    ports:
+      - "9090:9090"
+    environment:
+      # IMPORTANT: Replace this IP with the IP address of your Proxmox server
+      - DB_HOST=192.168.1.100
+      - DB_NAME=screensaver
+      - DB_USER=screensaver_user
+      - DB_PASSWORD=screensaver_pass
+      - API_KEY=my_secure_screensaver_key
+      - PORT=9090
+      - PHOTO_DIR=/photos
+      - PHOTO_EXTENSIONS=.jpg,.jpeg,.png,.heic
+      - PATH_BLACKLIST=@eaDir,#recycle,.DS_Store
+    volumes:
+      # Mount your Synology photo directory here. 
+      # Replace /volume1/photo with your actual photo path if different.
+      - /volume1/photo:/photos

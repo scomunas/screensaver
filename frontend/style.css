@@ -1,0 +1,535 @@
+/* CSS Reset & Variables */
+:root {
+    --transition-speed: 1000ms;
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    
+    /* Premium Palette */
+    --glass-bg: rgba(15, 15, 20, 0.45);
+    --glass-bg-hover: rgba(25, 25, 35, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+    
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.45);
+    
+    --accent: #5e60ce;
+    --accent-glow: rgba(94, 96, 206, 0.4);
+    
+    --btn-size: 52px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000000;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fullscreen Viewport */
+.screensaver-viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 1. Blurred Background Layers */
+.bg-blur-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(40px) brightness(0.35) contrast(0.9);
+    transform: scale(1.1); /* Prevents white margins from blur */
+    opacity: 0;
+    transition: opacity var(--transition-speed) ease-in-out;
+    z-index: 1;
+}
+
+.bg-blur-layer.active {
+    opacity: 1;
+}
+
+/* Deep Black Background Mode override */
+.bg-black-mode .bg-blur-layer {
+    background-image: none !important;
+    background-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+/* 2. Sharp Foreground Image Layers */
+.fg-image-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity var(--transition-speed) ease-in-out;
+    z-index: 2;
+}
+
+.fg-image-layer.active {
+    opacity: 1;
+}
+
+.fg-image-layer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.85);
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* 3. Top Status Bar (Clock & Date) */
+.top-status-bar {
+    position: absolute;
+    top: 40px;
+    right: 50px;
+    z-index: 10;
+    text-align: right;
+    color: var(--text-primary);
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.digital-clock {
+    font-family: var(--font-heading);
+    font-size: 4rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.digital-date {
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    margin-top: 5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* 4. Bottom-Left Details Card */
+.info-overlay {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    z-index: 10;
+    max-width: 650px;
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.info-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(130%);
+    -webkit-backdrop-filter: blur(24px) saturate(130%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 28px 32px;
+    box-shadow: var(--glass-shadow);
+    color: var(--text-primary);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.breadcrumbs-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.icon-folder {
+    color: var(--accent);
+}
+
+.photo-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 600;
+    line-height: 1.25;
+    word-break: break-all;
+    margin-bottom: 16px;
+}
+
+/* Metadata lists */
+.metadata-strip {
+    display: flex;
+    gap: 20px;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 14px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta-item i {
+    color: var(--text-muted);
+}
+
+/* EXIF metrics styling */
+.exif-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.exif-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.exif-tag i {
+    width: 18px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.exif-badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.exif-badge {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-secondary);
+}
+
+.exif-badge strong {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* 5. Right-Bottom Controls Panel */
+.control-panel {
+    position: absolute;
+    bottom: 50px;
+    right: 50px;
+    z-index: 10;
+    display: flex;
+    gap: 12px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    padding: 10px;
+    box-shadow: var(--glass-shadow);
+    opacity: 0; /* Auto-hides */
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Show controls when screensaver hovered, or active class set */
+.screensaver-viewport:hover .control-panel,
+.control-panel.keep-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ctrl-btn {
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 1.15rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.25s, transform 0.2s, color 0.25s;
+}
+
+.ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.05);
+}
+
+.ctrl-btn.active {
+    color: var(--accent);
+}
+
+.ctrl-btn.main-ctrl {
+    background: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.ctrl-btn.main-ctrl:hover {
+    background: #6e70df;
+    box-shadow: 0 0 20px rgba(94, 96, 206, 0.6);
+}
+
+/* 6. Settings Modal */
+.settings-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.settings-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.settings-content {
+    width: 500px;
+    background: rgba(20, 20, 25, 0.85);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 35px;
+    color: var(--text-primary);
+    box-shadow: var(--glass-shadow);
+    transform: scale(0.92);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.settings-modal.show .settings-content {
+    transform: scale(1);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.settings-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-header h2 i {
+    color: var(--accent);
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: var(--text-primary);
+}
+
+.settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-item label {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setting-item label i {
+    color: var(--text-muted);
+}
+
+.setting-item select, 
+.setting-item input[type="text"],
+.setting-item input[type="password"] {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, background-color 0.2s;
+    width: 100%;
+}
+
+.setting-item select:focus,
+.setting-item input[type="text"]:focus,
+.setting-item input[type="password"]:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.settings-divider {
+    border: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 10px 0;
+}
+
+/* Scanner sub section */
+.scan-section h3 {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.scan-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.scan-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.action-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.action-btn:hover {
+    background: #6e70df;
+}
+
+.action-btn:active {
+    transform: scale(0.98);
+}
+
+.scan-status-message {
+    font-size: 0.85rem;
+    margin-top: 8px;
+    min-height: 20px;
+    transition: color 0.2s;
+}
+
+.scan-status-message.success {
+    color: #4ade80;
+}
+
+.scan-status-message.error {
+    color: #f87171;
+}
+
+.scan-status-message.info {
+    color: #60a5fa;
+}
+
+/* Helper Class to Hide Overlay */
+.info-hidden {
+    opacity: 0 !important;
+    transform: translateY(20px);
+    pointer-events: none;
+}
+
+/* Clock / Status Top bar hides along with others */
+.status-hidden {
+    opacity: 0 !important;
+}
+
+/* Responsive Scaling for TVs vs Desktop/Tablets */
+@media (max-width: 768px) {
+    .info-overlay {
+        left: 20px;
+        bottom: 20px;
+        right: 20px;
+        max-width: none;
+    }
+    
+    .control-panel {
+        bottom: auto;
+        top: 20px;
+        right: 20px;
+    }
+    
+    .top-status-bar {
+        top: 25px;
+        left: 20px;
+        right: auto;
+        text-align: left;
+    }
+    
+    .digital-clock {
+        font-size: 2.5rem;
+    }
+}

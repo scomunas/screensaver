@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Screensaver</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Screensaver Container -->
+    <div id="screensaver-viewport" class="screensaver-viewport">
+        <!-- Dual Layers for Blurred Background (prevents black bars on portrait images) -->
+        <div id="bg-layer-1" class="bg-blur-layer active"></div>
+        <div id="bg-layer-2" class="bg-blur-layer"></div>
+
+        <!-- Dual Layers for sharp foreground image displaying object-fit: contain -->
+        <div id="fg-layer-1" class="fg-image-layer active">
+            <img id="img-1" src="" alt="Screensaver Photo 1">
+        </div>
+        <div id="fg-layer-2" class="fg-image-layer">
+            <img id="img-2" src="" alt="Screensaver Photo 2">
+        </div>
+
+        <!-- Modern Top Status Bar (Minimal clock) -->
+        <div class="top-status-bar">
+            <div id="digital-clock" class="digital-clock">00:00</div>
+            <div id="digital-date" class="digital-date">Sunday, May 24</div>
+        </div>
+
+        <!-- Glassmorphic Details Overlay (Bottom-Left) -->
+        <div id="info-overlay" class="info-overlay">
+            <div class="info-card">
+                <!-- Directory Breadcrumbs -->
+                <div class="breadcrumbs-container">
+                    <i class="fa-regular fa-folder-open icon-folder"></i>
+                    <span id="photo-directory">Photos</span>
+                </div>
+                
+                <!-- Main Filename -->
+                <h1 id="photo-title" class="photo-title">Loading screensaver...</h1>
+                
+                <!-- Metadata Strip -->
+                <div id="metadata-strip" class="metadata-strip hidden">
+                    <span class="meta-item" id="meta-date">
+                        <i class="fa-regular fa-calendar-days"></i>
+                        <span class="meta-val">-</span>
+                    </span>
+                    <span class="meta-item" id="meta-resolution">
+                        <i class="fa-regular fa-image"></i>
+                        <span class="meta-val">-</span>
+                    </span>
+                </div>
+
+                <!-- EXIF Camera Stats Strip -->
+                <div id="exif-strip" class="exif-strip hidden">
+                    <div class="exif-tag" id="exif-camera" title="Camera">
+                        <i class="fa-solid fa-camera"></i>
+                        <span class="exif-val">-</span>
+                    </div>
+                    <div class="exif-tag" id="exif-lens" title="Lens">
+                        <i class="fa-solid fa-ring"></i>
+                        <span class="exif-val">-</span>
+                    </div>
+                    <div class="exif-badge-group">
+                        <div class="exif-badge" id="exif-iso" title="ISO">
+                            <strong>ISO</strong> <span class="badge-val">-</span>
+                        </div>
+                        <div class="exif-badge" id="exif-aperture" title="Aperture">
+                            <strong>ƒ/</strong><span class="badge-val">-</span>
+                        </div>
+                        <div class="exif-badge" id="exif-shutter" title="Shutter Speed">
+                            <i class="fa-solid fa-stopwatch"></i> <span class="badge-val">-</span>
+                        </div>
+                        <div class="exif-badge" id="exif-focal" title="Focal Length">
+                            <span class="badge-val">-</span><strong>mm</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating UI Navigation Panel (Bottom-Right, auto-hides when inactive) -->
+        <div id="control-panel" class="control-panel">
+            <button id="btn-prev" class="ctrl-btn" title="Previous Image"><i class="fa-solid fa-chevron-left"></i></button>
+            <button id="btn-play-pause" class="ctrl-btn main-ctrl" title="Play/Pause"><i class="fa-solid fa-pause"></i></button>
+            <button id="btn-next" class="ctrl-btn" title="Next Image"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="btn-info-toggle" class="ctrl-btn active" title="Toggle Info"><i class="fa-regular fa-eye"></i></button>
+            <button id="btn-settings-toggle" class="ctrl-btn" title="Settings"><i class="fa-solid fa-gear"></i></button>
+        </div>
+
+        <!-- Settings Drawer (Modal Overlay) -->
+        <div id="settings-modal" class="settings-modal">
+            <div class="settings-content glass-panel">
+                <div class="settings-header">
+                    <h2><i class="fa-solid fa-sliders"></i> Screensaver Options</h2>
+                    <button id="btn-settings-close" class="close-btn">&times;</button>
+                </div>
+                <div class="settings-body">
+                    <div class="setting-item">
+                        <label for="select-duration"><i class="fa-solid fa-clock"></i> Photo Interval</label>
+                        <select id="select-duration">
+                            <option value="5000">5 Seconds</option>
+                            <option value="10000" selected>10 Seconds</option>
+                            <option value="20000">20 Seconds</option>
+                            <option value="30000">30 Seconds</option>
+                            <option value="60000">1 Minute</option>
+                            <option value="300000">5 Minutes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="select-transition"><i class="fa-solid fa-wand-magic-sparkles"></i> Transition Speed</label>
+                        <select id="select-transition">
+                            <option value="500">Fast (0.5s)</option>
+                            <option value="1000" selected>Smooth (1.0s)</option>
+                            <option value="2000">Slow (2.0s)</option>
+                            <option value="3000">Ambient (3.0s)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="toggle-background"><i class="fa-solid fa-circle-half-stroke"></i> Background Style</label>
+                        <select id="toggle-background">
+                            <option value="blurred" selected>Blurred Match</option>
+                            <option value="black">Deep Black</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="input-proxmox-url"><i class="fa-solid fa-server"></i> Proxmox Backend API URL</label>
+                        <input type="text" id="input-proxmox-url" placeholder="e.g. http://192.168.1.100:9091" value="http://localhost:9091">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="input-synology-url"><i class="fa-solid fa-hard-drive"></i> Synology NAS API URL</label>
+                        <input type="text" id="input-synology-url" placeholder="e.g. http://192.168.1.105:9090" value="http://localhost:9090">
+                    </div>
+                    
+                    <hr class="settings-divider">
+                    
+                    <div class="setting-item scan-section">
+                        <h3>Library Scan Management</h3>
+                        <p class="scan-note">Scan your NAS photos folders to index new pictures and extract EXIF data.</p>
+                        <div class="scan-input-group">
+                            <input type="text" id="scan-path-input" placeholder="e.g. /photos" value="/photos">
+                            <input type="password" id="scan-api-key" placeholder="Enter API Key">
+                        </div>
+                        <button id="btn-trigger-scan" class="action-btn"><i class="fa-solid fa-arrows-rotate"></i> Scan Now</button>
+                        <div id="scan-status-message" class="scan-status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
