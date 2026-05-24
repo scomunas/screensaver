@@ -59,3 +59,7 @@ Thumbs.db
 # --- Testing/Mock Data ---
 test_photos/
 node_modules/
+
+# --- Dynamic config ---
+frontend/config.json
+

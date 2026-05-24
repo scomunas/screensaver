@@ -21,13 +21,13 @@ services:
     container_name: screensaver-backend
     restart: always
     ports:
-      - "9091:9091"
+      - "${BACKEND_PORT:-9091}:${BACKEND_PORT:-9091}"
     environment:
       - DB_HOST=db
       - DB_NAME=${DB_NAME:-screensaver}
       - DB_USER=${DB_USER:-screensaver_user}
       - DB_PASSWORD=${DB_PASSWORD:-screensaver_pass}
-      - PORT=9091
+      - PORT=${BACKEND_PORT:-9091}
     depends_on:
       - db
 
@@ -39,6 +39,10 @@ services:
     restart: always
     ports:
       - "8080:80"
+    environment:
+      - BACKEND_URL=http://${BACKEND_IP:-localhost}:${BACKEND_PORT:-9091}
+      - SYNOLOGY_URL=http://${SYNOLOGY_IP:-localhost}:${SYNOLOGY_PORT:-9090}
+      - API_KEY=${API_KEY:-my_secure_screensaver_key}
     volumes:
       # Mount the local frontend directory for real-time adjustments
       - ./frontend:/usr/share/nginx/html

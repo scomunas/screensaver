@@ -16,7 +16,8 @@ const settings = {
     background: 'blurred',  // 'blurred' or 'black'
     showInfo: true,         // show EXIF/path overlay
     proxmoxUrl: 'http://localhost:9091',
-    synologyUrl: 'http://localhost:9090'
+    synologyUrl: 'http://localhost:9090',
+    apiKey: ''
 };
 
 // --- DOM ELEMENTS ---
@@ -58,17 +59,12 @@ const btnSettingsClose = document.getElementById('btn-settings-close');
 const selectDuration = document.getElementById('select-duration');
 const selectTransition = document.getElementById('select-transition');
 const toggleBackground = document.getElementById('toggle-background');
-const inputProxmoxUrl = document.getElementById('input-proxmox-url');
-const inputSynologyUrl = document.getElementById('input-synology-url');
 
-// Scan components
-const btnTriggerScan = document.getElementById('btn-trigger-scan');
-const scanPathInput = document.getElementById('scan-path-input');
-const scanApiKeyInput = document.getElementById('scan-api-key');
-const scanStatusMsg = document.getElementById('scan-status-message');
+
 
 // --- INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadConfigDefaults();
     loadSettings();
     initClock();
     initControlPanelAutoHide();
@@ -80,6 +76,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach Event Listeners
     setupEventListeners();
 });
+
+async function loadConfigDefaults() {
+    try {
+        const response = await fetch('config.json');
+        if (response.ok) {
+            const config = await response.json();
+            if (config.proxmoxUrl) settings.proxmoxUrl = config.proxmoxUrl;
+            if (config.synologyUrl) settings.synologyUrl = config.synologyUrl;
+            if (config.apiKey) settings.apiKey = config.apiKey;
+            console.log("Default backend configuration loaded successfully:", config);
+        }
+    } catch (e) {
+        console.log("Could not fetch config.json defaults, using code defaults:", e);
+    }
+}
 
 // --- CLOCK AND DATE ---
 function initClock() {
@@ -107,26 +118,16 @@ function loadSettings() {
     const savedTransition = localStorage.getItem('screensaver_transition');
     const savedBackground = localStorage.getItem('screensaver_background');
     const savedShowInfo = localStorage.getItem('screensaver_showinfo');
-    const savedApiKey = localStorage.getItem('screensaver_api_key');
-    const savedScanPath = localStorage.getItem('screensaver_scan_path');
-    const savedProxmoxUrl = localStorage.getItem('screensaver_proxmox_url');
-    const savedSynologyUrl = localStorage.getItem('screensaver_synology_url');
 
     if (savedDuration) settings.duration = parseInt(savedDuration);
     if (savedTransition) settings.transition = parseInt(savedTransition);
     if (savedBackground) settings.background = savedBackground;
     if (savedShowInfo) settings.showInfo = savedShowInfo === 'true';
-    if (savedApiKey) scanApiKeyInput.value = savedApiKey;
-    if (savedScanPath) scanPathInput.value = savedScanPath;
-    if (savedProxmoxUrl) settings.proxmoxUrl = savedProxmoxUrl;
-    if (savedSynologyUrl) settings.synologyUrl = savedSynologyUrl;
 
     // Apply values to dropdowns
     selectDuration.value = settings.duration;
     selectTransition.value = settings.transition;
     toggleBackground.value = settings.background;
-    inputProxmoxUrl.value = settings.proxmoxUrl;
-    inputSynologyUrl.value = settings.synologyUrl;
     
     if (settings.showInfo) {
         btnInfoToggle.classList.add('active');
@@ -200,24 +201,6 @@ function setupEventListeners() {
         applyStyleSettings();
     });
 
-    inputProxmoxUrl.addEventListener('change', (e) => {
-        settings.proxmoxUrl = e.target.value.trim();
-        saveSetting('screensaver_proxmox_url', settings.proxmoxUrl);
-    });
-
-    inputSynologyUrl.addEventListener('change', (e) => {
-        settings.synologyUrl = e.target.value.trim();
-        saveSetting('screensaver_synology_url', settings.synologyUrl);
-    });
-
-    // Scanner actions
-    btnTriggerScan.addEventListener('click', triggerLibraryScan);
-    scanApiKeyInput.addEventListener('change', (e) => {
-        saveSetting('screensaver_api_key', e.target.value);
-    });
-    scanPathInput.addEventListener('change', (e) => {
-        saveSetting('screensaver_scan_path', e.target.value);
-    });
 }
 
 // --- AUTO-HIDE CONTROLS PANEL ---
@@ -487,63 +470,4 @@ function updateInfoCard(photoData) {
     }
 }
 
-// --- SCANNING CONTROL ---
-async function triggerLibraryScan() {
-    const scanPath = scanPathInput.value.strip ? scanPathInput.value.strip() : scanPathInput.value.trim();
-    const apiKey = scanApiKeyInput.value.strip ? scanApiKeyInput.value.strip() : scanApiKeyInput.value.trim();
-    
-    if (!scanPath) {
-        showScanStatus("Please provide a valid scanning path.", "error");
-        return;
-    }
-    
-    if (!apiKey) {
-        showScanStatus("An API Key is required to scan.", "error");
-        return;
-    }
-    
-    showScanStatus("Triggering scan...", "info");
-    
-    try {
-        const response = await fetch(`${settings.synologyUrl}/api/scan`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-KEY': apiKey
-            },
-            body: JSON.stringify({ path: scanPath })
-        });
-        
-        if (response.status === 403) {
-            showScanStatus("Authentication failed: Invalid API Key.", "error");
-            return;
-        }
-        
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.detail || "Server error occurred");
-        }
-        
-        const result = await response.json();
-        showScanStatus(`Scan queued successfully! (Scan ID: ${result.scan_id.substring(0,8)}...)`, "success");
-        
-        // Wait and start displaying slideshow after a delay if first run
-        setTimeout(() => {
-            if (photoHistory.length === 0) {
-                advanceSlideshow();
-            }
-        }, 3000);
-        
-    } catch (error) {
-        console.error("Scanning request failed:", error);
-        showScanStatus(`Scan failed: ${error.message}`, "error");
-    }
-}
 
-function showScanStatus(message, type) {
-    scanStatusMsg.textContent = message;
-    scanStatusMsg.className = "scan-status-message"; // Reset
-    if (type) {
-        scanStatusMsg.classList.add(type);
-    }
-}
