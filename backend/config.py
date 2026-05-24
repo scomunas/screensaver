@@ -16,5 +16,5 @@ DB_CONFIG = {
     "password": DB_PASSWORD
 }
 
-# API configuration
-PORT = int(os.getenv("PORT", 9091))
+# API configuration: Use BACKEND_PORT specifically
+PORT = int(os.getenv("BACKEND_PORT", 9091))
