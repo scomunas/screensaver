@@ -26,6 +26,17 @@ try:
 except ImportError:
     HEIF_SUPPORTED = False
 
+# Try to import hachoir for video metadata extraction
+try:
+    from hachoir.parser import createParser
+    from hachoir.metadata import extractMetadata
+    from hachoir.core import config as hachoir_config
+    hachoir_config.quiet = True
+    HACHOIR_SUPPORTED = True
+except ImportError:
+    HACHOIR_SUPPORTED = False
+
+
 # --- LOGGING CONFIGURATION ---
 LOG_DIR = "log"
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -71,6 +82,8 @@ def clean_env_list(env_key, default):
     return [item.strip() for item in raw.split(',') if item.strip()]
 
 PHOTO_EXTENSIONS = tuple(e.lower() if e.startswith('.') else f".{e.lower()}" for e in clean_env_list("PHOTO_EXTENSIONS", ".jpg,.jpeg,.png,.heic"))
+VIDEO_EXTENSIONS = tuple(e.lower() if e.startswith('.') else f".{e.lower()}" for e in clean_env_list("VIDEO_EXTENSIONS", ".mp4,.mov,.webm,.mpg,.mpeg,.m4v"))
+ALL_EXTENSIONS = PHOTO_EXTENSIONS + VIDEO_EXTENSIONS
 PATH_BLACKLIST = clean_env_list("PATH_BLACKLIST", "@eaDir,#recycle,.DS_Store")
 
 worker_lock = asyncio.Lock()
@@ -202,6 +215,72 @@ def extract_photo_metadata(file_path: str) -> dict:
 
     return metadata
 
+def extract_video_metadata(file_path: str) -> dict:
+    metadata = {
+        "width": None, "height": None, "duration": None, "date_taken": None,
+        "camera_make": None, "camera_model": None, "lens_model": None,
+        "exposure_time": None, "f_number": None, "iso": None, "focal_length": None
+    }
+    
+    if HACHOIR_SUPPORTED:
+        try:
+            parser = createParser(file_path)
+            if parser:
+                with parser:
+                    meta = extractMetadata(parser)
+                    if meta:
+                        # Duration
+                        dur = meta.get('duration')
+                        if dur:
+                            if hasattr(dur, 'total_seconds'):
+                                metadata["duration"] = float(dur.total_seconds())
+                            else:
+                                try:
+                                    metadata["duration"] = float(str(dur))
+                                except (ValueError, TypeError):
+                                    pass
+                        
+                        # Width and height
+                        w = meta.get('width')
+                        h = meta.get('height')
+                        try:
+                            metadata["width"] = int(w) if w else None
+                        except (ValueError, TypeError):
+                            pass
+                        try:
+                            metadata["height"] = int(h) if h else None
+                        except (ValueError, TypeError):
+                            pass
+                        
+                        # Date taken fallback
+                        dt = meta.get('creation_date')
+                        if dt:
+                            if isinstance(dt, datetime):
+                                metadata["date_taken"] = dt
+                            else:
+                                try:
+                                    metadata["date_taken"] = datetime.strptime(str(dt), '%Y-%m-%d %H:%M:%S')
+                                except Exception:
+                                    pass
+        except Exception as e:
+            logger.warning(f"Hachoir failed for {file_path}: {e}")
+            
+    # Date Fallbacks
+    filename = os.path.basename(file_path)
+    if not metadata["date_taken"]:
+        metadata["date_taken"] = get_date_from_filename(filename)
+    if not metadata["date_taken"]:
+        try:
+            st = os.stat(file_path)
+            try:
+                metadata["date_taken"] = datetime.fromtimestamp(st.st_birthtime)
+            except AttributeError:
+                metadata["date_taken"] = datetime.fromtimestamp(st.st_mtime)
+        except Exception:
+            metadata["date_taken"] = datetime.now()
+
+    return metadata
+
 # --- SCAN ENGINE ---
 def process_scan(scan_id: str, root_path: str):
     logger.info(f"Starting photo scan [ID: {scan_id}] for Path: {root_path}")
@@ -238,7 +317,8 @@ def process_scan(scan_id: str, root_path: str):
                     if any(black in name for black in PATH_BLACKLIST):
                         continue
                     
-                    if name.lower().endswith(PHOTO_EXTENSIONS):
+                    lower_name = name.lower()
+                    if lower_name.endswith(ALL_EXTENSIONS):
                         full_path = os.path.join(root, name)
                         count += 1
                         
@@ -253,10 +333,15 @@ def process_scan(scan_id: str, root_path: str):
                         
                         if cached_size != current_size:
                             logger.info(f"Extracting metadata for: {name}")
-                            meta = extract_photo_metadata(full_path)
+                            if lower_name.endswith(VIDEO_EXTENSIONS):
+                                media_type = 'video'
+                                meta = extract_video_metadata(full_path)
+                            else:
+                                media_type = 'photo'
+                                meta = extract_photo_metadata(full_path)
                             imported_count += 1
                         else:
-                            # Photo unchanged, skip processing
+                            # Unchanged, skip processing
                             continue
 
                         rel_dir = os.path.basename(root)
@@ -267,11 +352,12 @@ def process_scan(scan_id: str, root_path: str):
                             scan_id, full_path, name, rel_dir, current_size,
                             meta["width"], meta["height"], meta["date_taken"],
                             meta["camera_make"], meta["camera_model"], meta["lens_model"],
-                            meta["exposure_time"], meta["f_number"], meta["iso"], meta["focal_length"]
+                            meta["exposure_time"], meta["f_number"], meta["iso"], meta["focal_length"],
+                            media_type, meta.get("duration")
                         ))
 
                         if len(photo_buffer) >= BUFFER_SIZE:
-                            logger.info(f"Saving batch of {len(photo_buffer)} photos to database...")
+                            logger.info(f"Saving batch of {len(photo_buffer)} files to database...")
                             insert_photos_batch(cur, photo_buffer)
                             conn.commit()
                             photo_buffer = []
@@ -323,7 +409,8 @@ def insert_photos_batch(cur, photo_buffer):
         INSERT INTO nas_photos (
             scan_id, file_path, file_name, directory, file_size, 
             width, height, date_taken, camera_make, camera_model, 
-            lens_model, exposure_time, f_number, iso, focal_length
+            lens_model, exposure_time, f_number, iso, focal_length,
+            media_type, duration
         ) VALUES %s
         ON CONFLICT (file_path) DO UPDATE SET
             scan_id = EXCLUDED.scan_id,
@@ -339,7 +426,9 @@ def insert_photos_batch(cur, photo_buffer):
             exposure_time = EXCLUDED.exposure_time,
             f_number = EXCLUDED.f_number,
             iso = EXCLUDED.iso,
-            focal_length = EXCLUDED.focal_length;
+            focal_length = EXCLUDED.focal_length,
+            media_type = EXCLUDED.media_type,
+            duration = EXCLUDED.duration;
     """
     execute_values(cur, query, photo_buffer)
 
@@ -462,7 +551,21 @@ async def get_photo_file(photo_id: int):
             logger.error(f"Error converting HEIC: {e}")
             raise HTTPException(status_code=500, detail="Failed to convert HEIC image")
             
-    media_type = "image/png" if ext == ".png" else "image/jpeg"
+    if ext == ".png":
+        media_type = "image/png"
+    elif ext == ".mp4":
+        media_type = "video/mp4"
+    elif ext == ".mov":
+        media_type = "video/quicktime"
+    elif ext == ".webm":
+        media_type = "video/webm"
+    elif ext in (".mpg", ".mpeg"):
+        media_type = "video/mpeg"
+    elif ext == ".m4v":
+        media_type = "video/x-m4v"
+    else:
+        media_type = "image/jpeg"
+        
     return FileResponse(file_path, media_type=media_type)
 
 if __name__ == "__main__":

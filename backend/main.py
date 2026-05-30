@@ -63,7 +63,9 @@ async def get_random_photo():
         "exposure_time": row["exposure_time"],
         "f_number": row["f_number"],
         "iso": row["iso"],
-        "focal_length": row["focal_length"]
+        "focal_length": row["focal_length"],
+        "media_type": row["media_type"],
+        "duration": row["duration"]
     }
 
 if __name__ == "__main__":

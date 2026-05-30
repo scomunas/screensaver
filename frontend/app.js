@@ -3,6 +3,8 @@ let slideshowInterval = null;
 let isPlaying = true;
 let currentLayer = 1; // 1 or 2
 let idleTimer = null;
+let videoTimeout = null;
+let activeVideo = null;
 
 // Photo history cache for Prev/Next navigation
 const photoHistory = [];
@@ -25,6 +27,7 @@ const viewport = document.getElementById('screensaver-viewport');
 const bgLayers = [document.getElementById('bg-layer-1'), document.getElementById('bg-layer-2')];
 const fgLayers = [document.getElementById('fg-layer-1'), document.getElementById('fg-layer-2')];
 const images = [document.getElementById('img-1'), document.getElementById('img-2')];
+const videos = [document.getElementById('vid-1'), document.getElementById('vid-2')];
 
 const clockEl = document.getElementById('digital-clock');
 const dateEl = document.getElementById('digital-date');
@@ -182,7 +185,7 @@ function setupEventListeners() {
     selectDuration.addEventListener('change', (e) => {
         settings.duration = parseInt(e.target.value);
         saveSetting('screensaver_duration', settings.duration);
-        if (isPlaying) {
+        if (isPlaying && !activeVideo) {
             stopTimer();
             startTimer();
         }
@@ -229,6 +232,7 @@ function resetIdleTimer() {
 
 // --- TIMER CONTROL ---
 function startTimer() {
+    stopTimer();
     slideshowInterval = setInterval(advanceSlideshow, settings.duration);
 }
 
@@ -240,11 +244,19 @@ function togglePlayback() {
     isPlaying = !isPlaying;
     if (isPlaying) {
         btnPlayPause.innerHTML = '<i class="fa-solid fa-pause"></i>';
-        startTimer();
-        advanceSlideshow(); // Go immediately when playing
+        if (activeVideo) {
+            activeVideo.play().catch(err => console.error("Error playing video on resume:", err));
+        } else {
+            startTimer();
+            advanceSlideshow(); // Go immediately when playing
+        }
     } else {
         btnPlayPause.innerHTML = '<i class="fa-solid fa-play"></i>';
-        stopTimer();
+        if (activeVideo) {
+            activeVideo.pause();
+        } else {
+            stopTimer();
+        }
     }
     resetIdleTimer();
 }
@@ -267,9 +279,6 @@ function toggleInfoOverlay() {
 function userTriggerAdvance() {
     stopTimer();
     advanceSlideshow();
-    if (isPlaying) {
-        startTimer();
-    }
     resetIdleTimer();
 }
 
@@ -289,9 +298,6 @@ function navigateHistory(direction) {
     btnPrev.style.opacity = historyIndex <= 0 ? "0.4" : "1";
     btnPrev.style.pointerEvents = historyIndex <= 0 ? "none" : "auto";
     
-    if (isPlaying) {
-        startTimer();
-    }
     resetIdleTimer();
 }
 
@@ -331,40 +337,159 @@ async function advanceSlideshow() {
     }
 }
 
+function stopActiveVideo() {
+    if (videoTimeout) {
+        clearTimeout(videoTimeout);
+        videoTimeout = null;
+    }
+    videos.forEach(vid => {
+        if (vid) {
+            try {
+                vid.pause();
+                vid.onended = null;
+                vid.oncanplay = null;
+                vid.onerror = null;
+                vid.src = "";
+                vid.load();
+            } catch (e) {
+                console.error("Error stopping video element:", e);
+            }
+        }
+    });
+    activeVideo = null;
+}
+
 // --- IMAGE PRELOADING & DISPLAY ---
 function displayPhoto(photoData) {
+    // Stop any currently playing/buffered video
+    stopActiveVideo();
+
     const nextLayer = currentLayer === 1 ? 2 : 1;
     const imgElement = images[nextLayer - 1];
+    const videoElement = videos[nextLayer - 1];
     
-    // Point image src to API
-    const photoUrl = `${settings.synologyUrl}/api/photos/file/${photoData.id}`;
+    // Point image/video src to API
+    const mediaUrl = `${settings.synologyUrl}/api/photos/file/${photoData.id}`;
     
-    // Preload image before switching layers
-    const tempImg = new Image();
-    tempImg.onload = () => {
-        // Update sources once image is loaded in memory
-        imgElement.src = photoUrl;
+    if (photoData.media_type === 'video') {
+        // Hide image, show video tag for the next layer
+        imgElement.style.display = 'none';
+        videoElement.style.display = 'block';
         
-        // Update blurred background layer if enabled
-        if (settings.background === 'blurred') {
-            bgLayers[nextLayer - 1].style.backgroundImage = `url('${photoUrl}')`;
-        }
+        // Configure video settings
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.autoplay = true;
         
-        // Perform layer cross-fade
-        bgLayers[currentLayer - 1].classList.remove('active');
-        bgLayers[nextLayer - 1].classList.add('active');
+        // Pause the main slideshow timer while the video is playing
+        stopTimer();
         
-        fgLayers[currentLayer - 1].classList.remove('active');
-        fgLayers[nextLayer - 1].classList.add('active');
+        let hasTriggeredTransition = false;
         
-        // Update layer state
-        currentLayer = nextLayer;
+        const onCanPlay = () => {
+            if (hasTriggeredTransition) return;
+            hasTriggeredTransition = true;
+            
+            // Clean up temporary handlers
+            videoElement.oncanplay = null;
+            videoElement.onerror = null;
+            
+            // Reference active video element
+            activeVideo = videoElement;
+            
+            // Attempt to play
+            videoElement.play().catch(err => {
+                console.error("Failed to play video:", err);
+                handleVideoFailure();
+            });
+            
+            // Update blurred background layer if enabled
+            // Clear background for video mode for cleaner visual aesthetic and better contrast
+            if (settings.background === 'blurred') {
+                bgLayers[nextLayer - 1].style.backgroundImage = 'none';
+            }
+            
+            // Perform layer cross-fade transition
+            bgLayers[currentLayer - 1].classList.remove('active');
+            bgLayers[nextLayer - 1].classList.add('active');
+            
+            fgLayers[currentLayer - 1].classList.remove('active');
+            fgLayers[nextLayer - 1].classList.add('active');
+            
+            // Update layer state
+            currentLayer = nextLayer;
+            
+            // Update metadata info card
+            updateInfoCard(photoData);
+            
+            // Set safety fallback timeout (duration + 5s buffer, fallback to 30s)
+            const durationLimit = (photoData.duration ? (photoData.duration + 5) : 30) * 1000;
+            videoTimeout = setTimeout(() => {
+                console.warn("Safety timeout reached for video, advancing...");
+                handleVideoFailure();
+            }, durationLimit);
+        };
         
-        // Update layout card EXIF values
-        updateInfoCard(photoData);
-    };
-    
-    tempImg.src = photoUrl;
+        const handleVideoFailure = () => {
+            stopActiveVideo();
+            if (isPlaying) {
+                advanceSlideshow();
+            }
+        };
+        
+        videoElement.oncanplay = onCanPlay;
+        videoElement.onerror = (err) => {
+            console.error("Video load/playback error:", err);
+            handleVideoFailure();
+        };
+        
+        videoElement.onended = () => {
+            stopActiveVideo();
+            if (isPlaying) {
+                advanceSlideshow();
+            }
+        };
+        
+        // Start loading
+        videoElement.src = mediaUrl;
+        videoElement.load();
+    } else {
+        // Handle standard photo display
+        imgElement.style.display = 'block';
+        videoElement.style.display = 'none';
+        
+        // Preload image before switching layers
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            // Update sources once image is loaded in memory
+            imgElement.src = mediaUrl;
+            
+            // Update blurred background layer if enabled
+            if (settings.background === 'blurred') {
+                bgLayers[nextLayer - 1].style.backgroundImage = `url('${mediaUrl}')`;
+            }
+            
+            // Perform layer cross-fade transition
+            bgLayers[currentLayer - 1].classList.remove('active');
+            bgLayers[nextLayer - 1].classList.add('active');
+            
+            fgLayers[currentLayer - 1].classList.remove('active');
+            fgLayers[nextLayer - 1].classList.add('active');
+            
+            // Update layer state
+            currentLayer = nextLayer;
+            
+            // Update metadata info card
+            updateInfoCard(photoData);
+            
+            // Restart the slideshow timer for the next transition if playing
+            if (isPlaying) {
+                startTimer();
+            }
+        };
+        
+        tempImg.src = mediaUrl;
+    }
 }
 
 // --- UPDATE METADATA CARD ---
@@ -390,8 +515,25 @@ function updateInfoCard(photoData) {
         metaDateVal.parentElement.style.display = 'none';
     }
     
+    const resIcon = document.querySelector('#meta-resolution i');
     if (photoData.width && photoData.height) {
-        metaResVal.textContent = `${photoData.width} × ${photoData.height}`;
+        let resText = `${photoData.width} × ${photoData.height}`;
+        if (photoData.media_type === 'video') {
+            if (resIcon) {
+                resIcon.className = 'fa-solid fa-video';
+            }
+            if (photoData.duration) {
+                const mins = Math.floor(photoData.duration / 60);
+                const secs = Math.round(photoData.duration % 60);
+                const durationStr = mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+                resText += ` (${durationStr})`;
+            }
+        } else {
+            if (resIcon) {
+                resIcon.className = 'fa-regular fa-image';
+            }
+        }
+        metaResVal.textContent = resText;
         metaResVal.parentElement.style.display = 'inline-flex';
         hasMeta = true;
     } else {

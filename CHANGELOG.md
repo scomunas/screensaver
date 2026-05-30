@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.4] - 2026-05-30
+
+### Added
+- **Native Video Support**: Expanded library scanner to index `.mp4`, `.mov`, `.webm`, `.mpg`, `.mpeg`, and `.m4v` files alongside photos, while explicitly excluding `.avi` files to prevent CPU-intensive server-side transcoding.
+- **HTTP Range Request Support**: Serves video streaming files using standard range requests (via FastAPI's `FileResponse`), allowing instant progressive buffering in the browser without downloading the full video first.
+- **Video EXIF Metadata Parsing**: Integrated `hachoir` parser to automatically retrieve video duration, width, height, and creation dates during crawler scans.
+- **Responsive Video Engine Overlay**: Upgraded the frontend layers to include `<video>` containers alongside images, dynamically showing/hiding them depending on media type.
+- **Synchronized Video Playback Logic**: Implemented automated slideshow transition pauses during active video playing, resuming and advancing only after the video ends (`onended` event) or if a safety fallback timeout is reached.
+- **Smart Playback Controls**: Extended play/pause settings to pause/resume active video playback, and modified slideshow settings to prevent timer restarts while video media is playing.
+- **Video Duration UI Details**: Dynamically adjusts glassmorphic info cards to show video camera icons and format duration times (`MM:SS` or `SSs`) next to resolutions.
+
 ## [v0.0.3] - 2026-05-24
 
 ### Changed

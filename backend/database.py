@@ -64,6 +64,10 @@ def init_db():
             cur.execute('CREATE INDEX IF NOT EXISTS idx_nas_photos_scan_id ON nas_photos(scan_id)')
             cur.execute('CREATE INDEX IF NOT EXISTS idx_nas_photos_path ON nas_photos(file_path)')
             
+            # Migrations for video support
+            cur.execute("ALTER TABLE nas_photos ADD COLUMN IF NOT EXISTS media_type VARCHAR(10) DEFAULT 'photo'")
+            cur.execute("ALTER TABLE nas_photos ADD COLUMN IF NOT EXISTS duration REAL")
+            
             conn.commit()
             logger.info("Database initialized successfully.")
     except Exception as e:
@@ -81,7 +85,7 @@ def get_random_photo_record():
             cur.execute("""
                 SELECT id, file_path, file_name, directory, file_size, width, height, 
                        date_taken, camera_make, camera_model, lens_model, 
-                       exposure_time, f_number, iso, focal_length
+                       exposure_time, f_number, iso, focal_length, media_type, duration
                 FROM nas_photos
                 ORDER BY RANDOM()
                 LIMIT 1
