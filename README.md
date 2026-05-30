@@ -1,6 +1,6 @@
-# Synology & Proxmox Photo Screensaver (v0.0.3)
+# Synology & Proxmox Photo Screensaver (v0.0.4)
 
-A modern, clean, and adaptive fullscreen photo screensaver designed for Smart TVs. It uses a split architecture to keep files secure on your Synology NAS while running database and web operations on your Proxmox server.
+A modern, clean, and adaptive fullscreen media screensaver designed for Smart TVs. It uses a split architecture to keep files secure on your Synology NAS while running database and web operations on your Proxmox server, supporting both photos and videos natively.
 
 ```mermaid
 graph TD
@@ -9,10 +9,10 @@ graph TD
         BE -->|Query Meta| DB["PostgreSQL Database"]
     end
     subgraph Synology ["Synology NAS (Native Linux)"]
-        FE -->|2. Stream Photo File| SYN["Synology API: FastAPI"]
+        FE -->|2. Stream Photo/Video File| SYN["Synology API: FastAPI"]
         SYN -->|Read File| Storage["NAS Disk Storage"]
         SYN -->|Read Path from DB| DB
-        Scanner["manual_scan.py"] -->|Crawl & Index EXIF| DB
+        Scanner["manual_scan.py"] -->|Crawl & Index EXIF & Duration| DB
     end
 ```
 
@@ -75,7 +75,7 @@ graph TD
 The Synology agent runs directly on your NAS filesystem to scan directory structures natively.
 
 1. Copy the `/synology` folder and your `.env` file to your Synology NAS.
-2. Install Python 3 dependencies on the NAS:
+2. Install Python 3 dependencies (including `hachoir` for video EXIF extraction and `pillow` / `pillow-heif` for image parsing) on the NAS:
    ```bash
    pip install -r requirements.txt
    ```
@@ -83,7 +83,7 @@ The Synology agent runs directly on your NAS filesystem to scan directory struct
    ```bash
    python main.py
    ```
-   This exposes the file-retrieval API on port `9090` of your NAS (e.g. `http://<synology_ip>:9090`).
+   This exposes the file-retrieval API on port `9092` of your NAS (e.g. `http://<synology_ip>:9092`).
 
 ---
 
@@ -107,7 +107,10 @@ This script will:
 
 ## 📺 Screensaver Features
 
-- **Blurred Backdrop Scaling**: Portrait or narrow photos show a heavily blurred and darkened version of themselves in the background to prevent black letterbox bars.
+- **Native Video Support**: Index and play `.mp4`, `.mov`, `.webm`, `.mpg`, `.mpeg`, and `.m4v` video files natively, pausing the slideshow transition automatically until the video finishes playing.
+- **HTTP Range Requests**: Serves video files using standard partial content chunking, enabling progressive loading and playback without downloading the entire video file first.
+- **Interactive Audio Volume Toggle**: A speaker icon button on the controls strip allows you to mute and unmute the screensaver globally. The preference is maintained across slides.
+- **Blurred Backdrop Scaling**: Portrait or narrow photos show a heavily blurred and darkened version of themselves in the background to prevent black letterbox bars (clears for video files).
 - **TV Screen Protection**: Interactive controls automatically fade out after 5 seconds of inactivity to protect TV panels from burn-in.
-- **History Queue**: The **Previous** and **Next** buttons let you navigate backward and forward through your recently viewed photos.
-- **EXIF details Overlay**: Shows folder breadcrumbs, date taken, camera metrics, and lenses. Click the **Eye icon** to toggle the clock and EXIF card overlay for a completely clean view.
+- **History Queue**: The **Previous** and **Next** buttons let you navigate backward and forward through your recently viewed photos/videos.
+- **EXIF & Video metadata Overlay**: Shows folder breadcrumbs, date taken, camera metrics, and lenses (or video duration and video icons). Click the **Eye icon** to toggle the clock and details card overlay for a completely clean view.

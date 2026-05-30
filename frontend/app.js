@@ -5,6 +5,7 @@ let currentLayer = 1; // 1 or 2
 let idleTimer = null;
 let videoTimeout = null;
 let activeVideo = null;
+let isMuted = true;
 
 // Photo history cache for Prev/Next navigation
 const photoHistory = [];
@@ -53,6 +54,7 @@ const btnPrev = document.getElementById('btn-prev');
 const btnPlayPause = document.getElementById('btn-play-pause');
 const btnNext = document.getElementById('btn-next');
 const btnInfoToggle = document.getElementById('btn-info-toggle');
+const btnVolumeToggle = document.getElementById('btn-volume-toggle');
 const btnSettingsToggle = document.getElementById('btn-settings-toggle');
 
 // Settings Modal
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadSettings();
     initClock();
     initControlPanelAutoHide();
+    updateVolumeIcon();
     
     // Initial fetch and start
     advanceSlideshow();
@@ -169,6 +172,7 @@ function setupEventListeners() {
         navigateHistory(-1);
     });
     btnInfoToggle.addEventListener('click', toggleInfoOverlay);
+    btnVolumeToggle.addEventListener('click', toggleVolume);
     
     // Settings modal triggers
     btnSettingsToggle.addEventListener('click', () => {
@@ -357,6 +361,27 @@ function stopActiveVideo() {
         }
     });
     activeVideo = null;
+
+    // We no longer hide the volume button here.
+}
+
+function toggleVolume() {
+    isMuted = !isMuted;
+    if (activeVideo) {
+        activeVideo.muted = isMuted;
+    }
+    updateVolumeIcon();
+    resetIdleTimer();
+}
+
+function updateVolumeIcon() {
+    if (!isMuted) {
+        btnVolumeToggle.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        btnVolumeToggle.classList.add('active');
+    } else {
+        btnVolumeToggle.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        btnVolumeToggle.classList.remove('active');
+    }
 }
 
 // --- IMAGE PRELOADING & DISPLAY ---
@@ -377,7 +402,7 @@ function displayPhoto(photoData) {
         videoElement.style.display = 'block';
         
         // Configure video settings
-        videoElement.muted = true;
+        videoElement.muted = isMuted;
         videoElement.playsInline = true;
         videoElement.autoplay = true;
         
