@@ -5,7 +5,7 @@ let currentLayer = 1; // 1 or 2
 let idleTimer = null;
 let videoTimeout = null;
 let activeVideo = null;
-let isMuted = true;
+let isMuted = false;
 
 // Photo history cache for Prev/Next navigation
 const photoHistory = [];

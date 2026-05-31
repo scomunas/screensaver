@@ -45,7 +45,7 @@ def init_db():
                     file_path TEXT UNIQUE NOT NULL, 
                     file_name TEXT NOT NULL,
                     directory TEXT NOT NULL,
-                    file_size INTEGER NOT NULL,
+                    file_size BIGINT NOT NULL,
                     width INTEGER,
                     height INTEGER,
                     date_taken TIMESTAMP,
@@ -67,6 +67,7 @@ def init_db():
             # Migrations for video support
             cur.execute("ALTER TABLE nas_photos ADD COLUMN IF NOT EXISTS media_type VARCHAR(10) DEFAULT 'photo'")
             cur.execute("ALTER TABLE nas_photos ADD COLUMN IF NOT EXISTS duration REAL")
+            cur.execute("ALTER TABLE nas_photos ALTER COLUMN file_size TYPE BIGINT")
             
             conn.commit()
             logger.info("Database initialized successfully.")

@@ -12,10 +12,13 @@ All notable changes to this project will be documented in this file.
 - **Synchronized Video Playback Logic**: Implemented automated slideshow transition pauses during active video playing, resuming and advancing only after the video ends (`onended` event) or if a safety fallback timeout is reached.
 - **Smart Playback Controls**: Extended play/pause settings to pause/resume active video playback, and modified slideshow settings to prevent timer restarts while video media is playing.
 - **Video Duration UI Details**: Dynamically adjusts glassmorphic info cards to show video camera icons and format duration times (`MM:SS` or `SSs`) next to resolutions.
-- **Interactive Audio Volume Toggle**: Added a speaker control button (`btn-volume-toggle`) to the controls strip that is always visible (defaulting to muted). Toggling it sets a global session state (`isMuted`) so that all currently playing and subsequent videos respect the user's unmuted/muted preference.
+- **Interactive Audio Volume Toggle**: Added a speaker control button (`btn-volume-toggle`) to the controls strip that is always visible (defaulting to unmuted/sound on). Toggling it sets a global session state (`isMuted`) so that all currently playing and subsequent videos respect the user's unmuted/muted preference.
 
 ### Changed
 - **Parametric Video Extensions**: Added `VIDEO_EXTENSIONS` to `.env` and `.env.example` configurations to parse video file sweeps dynamically (defaults to `.mp4,.mov,.webm,.mpg,.mpeg,.m4v`), replacing hardcoded extensions in the crawler.
+
+### Fixed
+- **Large File Size Bug (Integer Out of Range)**: Upgraded `file_size` column data type from `INTEGER` to `BIGINT` in the database schema and created startup migrations. This fixes crashes during sweeps when indexing video files larger than 2.14 GB.
 
 ## [v0.0.3] - 2026-05-24
 

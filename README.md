@@ -109,7 +109,7 @@ This script will:
 
 - **Native Video Support**: Index and play `.mp4`, `.mov`, `.webm`, `.mpg`, `.mpeg`, and `.m4v` video files natively, pausing the slideshow transition automatically until the video finishes playing.
 - **HTTP Range Requests**: Serves video files using standard partial content chunking, enabling progressive loading and playback without downloading the entire video file first.
-- **Interactive Audio Volume Toggle**: A speaker icon button on the controls strip allows you to mute and unmute the screensaver globally. The preference is maintained across slides.
+- **Interactive Audio Volume Toggle**: A speaker icon button on the controls strip allows you to mute and unmute the screensaver globally (defaults to unmuted). The preference is maintained across slides.
 - **Blurred Backdrop Scaling**: Portrait or narrow photos show a heavily blurred and darkened version of themselves in the background to prevent black letterbox bars (clears for video files).
 - **TV Screen Protection**: Interactive controls automatically fade out after 5 seconds of inactivity to protect TV panels from burn-in.
 - **History Queue**: The **Previous** and **Next** buttons let you navigate backward and forward through your recently viewed photos/videos.
