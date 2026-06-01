@@ -1,4 +1,4 @@
-# Synology & Proxmox Photo Screensaver (v0.0.4)
+# Synology & Proxmox Photo Screensaver (v0.0.5)
 
 A modern, clean, and adaptive fullscreen media screensaver designed for Smart TVs. It uses a split architecture to keep files secure on your Synology NAS while running database and web operations on your Proxmox server, supporting both photos and videos natively.
 
@@ -7,12 +7,14 @@ graph TD
     subgraph Proxmox ["Proxmox Server"]
         FE["Frontend: Nginx"] -->|1. Fetch Random Metadata| BE["Backend: FastAPI"]
         BE -->|Query Meta| DB["PostgreSQL Database"]
+        BE -->|3. Upload Attachment / Send Link| TG["Telegram Bot API"]
     end
     subgraph Synology ["Synology NAS (Native Linux)"]
         FE -->|2. Stream Photo/Video File| SYN["Synology API: FastAPI"]
         SYN -->|Read File| Storage["NAS Disk Storage"]
         SYN -->|Read Path from DB| DB
         Scanner["manual_scan.py"] -->|Crawl & Index EXIF & Duration| DB
+        BE -->|Fetch File Bytes| SYN
     end
 ```
 
@@ -56,9 +58,10 @@ graph TD
    cp .env.example .env
    ```
 2. Open `.env` and set your credentials:
-   - Make sure `DB_HOST` is the IP of your Proxmox server (so both backend and Synology can connect to it).
+   - Make sure `DB_IP` is the IP of your Proxmox server (so both backend and Synology can connect to it).
    - Set `BACKEND_PORT` (default: `9090`).
-   - Set `SYNOLOGY_IP` to your Synology NAS IP and `SYNOLOGY_PORT` (default: `9090`).
+   - Set `SYNOLOGY_IP` to your Synology NAS IP and `SYNOLOGY_PORT` (default: `9092`).
+   - Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to connect your Telegram bot and target chat.
 3. Start the Docker stack on Proxmox:
    ```bash
    docker-compose up --build -d
@@ -108,6 +111,7 @@ This script will:
 ## 📺 Screensaver Features
 
 - **Native Video Support**: Index and play `.mp4`, `.mov`, `.webm`, `.mpg`, `.mpeg`, and `.m4v` video files natively, pausing the slideshow transition automatically until the video finishes playing.
+- **Telegram Media Sharing**: Instantly share the currently displayed photo or video to your configured Telegram chat by clicking the envelope icon on the control strip. Media files $\le$ 50MB are uploaded and delivered inline, while files > 50MB automatically fall back to sending a text message containing a direct playback link. Includes dynamic UI status transitions (upload spinner, success checkmark, or failure cross).
 - **HTTP Range Requests**: Serves video files using standard partial content chunking, enabling progressive loading and playback without downloading the entire video file first.
 - **Interactive Audio Volume Toggle**: A speaker icon button on the controls strip allows you to mute and unmute the screensaver globally (defaults to unmuted). The preference is maintained across slides.
 - **Blurred Backdrop Scaling**: Portrait or narrow photos show a heavily blurred and darkened version of themselves in the background to prevent black letterbox bars (clears for video files).

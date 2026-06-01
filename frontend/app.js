@@ -55,6 +55,7 @@ const btnPlayPause = document.getElementById('btn-play-pause');
 const btnNext = document.getElementById('btn-next');
 const btnInfoToggle = document.getElementById('btn-info-toggle');
 const btnVolumeToggle = document.getElementById('btn-volume-toggle');
+const btnSendMedia = document.getElementById('btn-send-media');
 const btnSettingsToggle = document.getElementById('btn-settings-toggle');
 
 // Settings Modal
@@ -173,6 +174,7 @@ function setupEventListeners() {
     });
     btnInfoToggle.addEventListener('click', toggleInfoOverlay);
     btnVolumeToggle.addEventListener('click', toggleVolume);
+    btnSendMedia.addEventListener('click', sendMediaToTelegram);
     
     // Settings modal triggers
     btnSettingsToggle.addEventListener('click', () => {
@@ -381,6 +383,47 @@ function updateVolumeIcon() {
     } else {
         btnVolumeToggle.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
         btnVolumeToggle.classList.remove('active');
+    }
+}
+
+async function sendMediaToTelegram() {
+    const activeMedia = photoHistory[historyIndex];
+    if (!activeMedia) return;
+    
+    // Prevent double clicking while sending
+    if (btnSendMedia.classList.contains('sending')) return;
+    
+    btnSendMedia.classList.add('sending');
+    // Change icon to a spinner to indicate it is uploading
+    btnSendMedia.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    resetIdleTimer();
+    
+    try {
+        const response = await fetch(`${settings.proxmoxUrl}/api/photos/${activeMedia.id}/send`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            // Show checkmark on success
+            btnSendMedia.innerHTML = '<i class="fa-solid fa-check" style="color: #4ade80;"></i>';
+            btnSendMedia.classList.add('success');
+        } else {
+            const errData = await response.json().catch(() => ({ detail: "Unknown error" }));
+            throw new Error(errData.detail || `Server Error ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Failed to send media via Telegram:", error);
+        // Show cross on error
+        btnSendMedia.innerHTML = '<i class="fa-solid fa-xmark" style="color: #f87171;"></i>';
+        btnSendMedia.classList.add('error');
+    } finally {
+        resetIdleTimer();
+        // Restore standard envelope icon after a delay (3 seconds)
+        setTimeout(() => {
+            btnSendMedia.innerHTML = '<i class="fa-regular fa-envelope"></i>';
+            btnSendMedia.classList.remove('sending', 'success', 'error');
+            resetIdleTimer();
+        }, 3000);
     }
 }
 

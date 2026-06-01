@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.5] - 2026-06-01
+
+### Added
+- **Telegram Media Sharing Button**: Integrated a sharing control button (envelope icon `#btn-send-media`) into the screensaver overlay panel.
+- **Smart Size-Based Sharing Engine**: Implemented an asynchronous backend route (`POST /api/photos/{photo_id}/send`) that checks file size dynamically. Media files $\le$ 50MB are uploaded and delivered inline (as photo or video attachments) to the user's Telegram chat. Files exceeding 50MB automatically fall back to sending a text message with a direct playable link.
+- **Seamless HEIC Upload Support**: Implemented filename sanitization for HEIC photos sent to Telegram. Since HEIC images are converted to JPEG on-the-fly by the Synology service, the backend automatically renames the attachment's extension to `.jpg` to prevent Telegram from rejecting the upload.
+- **High-End Interactive Micro-Animations**: Programmed transient UI state transitions for the envelope button. Clicking the button converts the icon into a loading spinner, which then transitions into a green checkmark on success or a red cross on error before reverting to the default envelope icon after a 3-second delay.
+- **Localized Bold Captioning**: Formatted Telegram media captions and links in Spanish with HTML-bold headers (`<b>Compartido desde Screensaver</b>`). Direct media uploads now display the full NAS filepath, and fallback link messages details size limits (`(Tamaño: xxMB - Supera los 50MB)`).
+- **Integrated Environment Controls**: Configured Docker Compose mappings to securely feed `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` credentials from `.env` into the backend API container.
+
 ## [v0.0.4] - 2026-05-30
 
 ### Added

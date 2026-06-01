@@ -20,3 +20,10 @@ DB_CONFIG = {
 
 # API configuration
 PORT = int(os.getenv("BACKEND_PORT", 9090))
+
+# Telegram notifications settings
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+SYNOLOGY_HOST = os.getenv("SYNOLOGY_IP", "localhost")
+SYNOLOGY_PORT = int(os.getenv("SYNOLOGY_PORT", 9092))
+SYNOLOGY_URL = f"http://{SYNOLOGY_HOST}:{SYNOLOGY_PORT}"

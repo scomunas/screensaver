@@ -97,3 +97,21 @@ def get_random_photo_record():
         return None
     finally:
         conn.close()
+
+def get_photo_record_by_id(photo_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=DictCursor) as cur:
+            cur.execute("""
+                SELECT id, file_path, file_name, directory, file_size, width, height, 
+                       date_taken, camera_make, camera_model, lens_model, 
+                       exposure_time, f_number, iso, focal_length, media_type, duration
+                FROM nas_photos
+                WHERE id = %s
+            """, (photo_id,))
+            return cur.fetchone()
+    except Exception as e:
+        logger.error(f"Error fetching photo by id {photo_id}: {e}")
+        return None
+    finally:
+        conn.close()
