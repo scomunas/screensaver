@@ -515,7 +515,11 @@ body, html {
     color: #60a5fa;
 }
 
-/* Helper Class to Hide Overlay */
+/* Helper Classes */
+.hidden {
+    display: none !important;
+}
+
 .info-hidden {
     opacity: 0 !important;
     transform: translateY(20px);
@@ -553,3 +557,4 @@ body, html {
         font-size: 2.5rem;
     }
 }
+

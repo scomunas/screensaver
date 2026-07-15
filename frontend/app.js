@@ -18,6 +18,7 @@ const settings = {
     transition: 1000,       // 1s
     background: 'blurred',  // 'blurred' or 'black'
     showInfo: true,         // show EXIF/path overlay
+    infoDetails: 'full',   // 'full' or 'short'
     proxmoxUrl: 'http://localhost:9091',
     synologyUrl: 'http://localhost:9090',
     apiKey: ''
@@ -64,6 +65,7 @@ const btnSettingsClose = document.getElementById('btn-settings-close');
 const selectDuration = document.getElementById('select-duration');
 const selectTransition = document.getElementById('select-transition');
 const toggleBackground = document.getElementById('toggle-background');
+const selectInfoDetails = document.getElementById('select-info-details');
 
 
 
@@ -124,16 +126,19 @@ function loadSettings() {
     const savedTransition = localStorage.getItem('screensaver_transition');
     const savedBackground = localStorage.getItem('screensaver_background');
     const savedShowInfo = localStorage.getItem('screensaver_showinfo');
+    const savedInfoDetails = localStorage.getItem('screensaver_info_details');
 
     if (savedDuration) settings.duration = parseInt(savedDuration);
     if (savedTransition) settings.transition = parseInt(savedTransition);
     if (savedBackground) settings.background = savedBackground;
     if (savedShowInfo) settings.showInfo = savedShowInfo === 'true';
+    if (savedInfoDetails === 'full' || savedInfoDetails === 'short') settings.infoDetails = savedInfoDetails;
 
     // Apply values to dropdowns
     selectDuration.value = settings.duration;
     selectTransition.value = settings.transition;
     toggleBackground.value = settings.background;
+    selectInfoDetails.value = settings.infoDetails;
     
     if (settings.showInfo) {
         btnInfoToggle.classList.add('active');
@@ -207,6 +212,16 @@ function setupEventListeners() {
         settings.background = e.target.value;
         saveSetting('screensaver_background', settings.background);
         applyStyleSettings();
+    });
+
+    selectInfoDetails.addEventListener('change', (e) => {
+        settings.infoDetails = e.target.value;
+        saveSetting('screensaver_info_details', settings.infoDetails);
+        const activeMedia = photoHistory[historyIndex];
+        if (activeMedia) {
+            updateInfoCard(activeMedia);
+        }
+        resetIdleTimer();
     });
 
 }
@@ -568,6 +583,11 @@ function updateInfoCard(photoData) {
     // Clean up older tags
     metadataStrip.classList.add('hidden');
     exifStrip.classList.add('hidden');
+
+    const isFullInfo = settings.infoDetails === 'full';
+    if (!isFullInfo) {
+        return;
+    }
     
     // 1. Basic Metadata
     let hasMeta = false;
@@ -676,5 +696,7 @@ function updateInfoCard(photoData) {
         exifStrip.classList.remove('hidden');
     }
 }
+
+
 
 
