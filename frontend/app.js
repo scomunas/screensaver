@@ -17,8 +17,7 @@ const settings = {
     duration: 10000,        // 10s
     transition: 1000,       // 1s
     background: 'blurred',  // 'blurred' or 'black'
-    showInfo: true,         // show EXIF/path overlay
-    infoDetails: 'full',   // 'full' or 'short'
+    infoMode: 'full',       // 'full', 'folder', or 'none'
     proxmoxUrl: 'http://localhost:9091',
     synologyUrl: 'http://localhost:9090',
     apiKey: ''
@@ -65,7 +64,6 @@ const btnSettingsClose = document.getElementById('btn-settings-close');
 const selectDuration = document.getElementById('select-duration');
 const selectTransition = document.getElementById('select-transition');
 const toggleBackground = document.getElementById('toggle-background');
-const selectInfoDetails = document.getElementById('select-info-details');
 
 
 
@@ -125,29 +123,24 @@ function loadSettings() {
     const savedDuration = localStorage.getItem('screensaver_duration');
     const savedTransition = localStorage.getItem('screensaver_transition');
     const savedBackground = localStorage.getItem('screensaver_background');
+    const savedInfoMode = localStorage.getItem('screensaver_info_mode');
     const savedShowInfo = localStorage.getItem('screensaver_showinfo');
-    const savedInfoDetails = localStorage.getItem('screensaver_info_details');
 
     if (savedDuration) settings.duration = parseInt(savedDuration);
     if (savedTransition) settings.transition = parseInt(savedTransition);
     if (savedBackground) settings.background = savedBackground;
-    if (savedShowInfo) settings.showInfo = savedShowInfo === 'true';
-    if (savedInfoDetails === 'full' || savedInfoDetails === 'short') settings.infoDetails = savedInfoDetails;
+    if (savedInfoMode === 'full' || savedInfoMode === 'folder' || savedInfoMode === 'none') {
+        settings.infoMode = savedInfoMode;
+    } else if (savedShowInfo !== null) {
+        settings.infoMode = savedShowInfo === 'true' ? 'full' : 'none';
+    }
 
     // Apply values to dropdowns
     selectDuration.value = settings.duration;
     selectTransition.value = settings.transition;
     toggleBackground.value = settings.background;
-    selectInfoDetails.value = settings.infoDetails;
     
-    if (settings.showInfo) {
-        btnInfoToggle.classList.add('active');
-        infoOverlay.classList.remove('info-hidden');
-    } else {
-        btnInfoToggle.classList.remove('active');
-        infoOverlay.classList.add('info-hidden');
-    }
-    
+    applyInfoMode();
     applyStyleSettings();
 }
 
@@ -214,16 +207,6 @@ function setupEventListeners() {
         applyStyleSettings();
     });
 
-    selectInfoDetails.addEventListener('change', (e) => {
-        settings.infoDetails = e.target.value;
-        saveSetting('screensaver_info_details', settings.infoDetails);
-        const activeMedia = photoHistory[historyIndex];
-        if (activeMedia) {
-            updateInfoCard(activeMedia);
-        }
-        resetIdleTimer();
-    });
-
 }
 
 // --- AUTO-HIDE CONTROLS PANEL ---
@@ -282,17 +265,30 @@ function togglePlayback() {
     resetIdleTimer();
 }
 
+function applyInfoMode() {
+    const hasOverlay = settings.infoMode !== 'none';
+
+    btnInfoToggle.classList.toggle('active', hasOverlay);
+    infoOverlay.classList.toggle('info-hidden', !hasOverlay);
+}
+
 function toggleInfoOverlay() {
-    settings.showInfo = !settings.showInfo;
-    saveSetting('screensaver_showinfo', settings.showInfo);
-    
-    if (settings.showInfo) {
-        btnInfoToggle.classList.add('active');
-        infoOverlay.classList.remove('info-hidden');
+    if (settings.infoMode === 'full') {
+        settings.infoMode = 'folder';
+    } else if (settings.infoMode === 'folder') {
+        settings.infoMode = 'none';
     } else {
-        btnInfoToggle.classList.remove('active');
-        infoOverlay.classList.add('info-hidden');
+        settings.infoMode = 'full';
     }
+
+    saveSetting('screensaver_info_mode', settings.infoMode);
+    applyInfoMode();
+
+    const activeMedia = photoHistory[historyIndex];
+    if (activeMedia) {
+        updateInfoCard(activeMedia);
+    }
+
     resetIdleTimer();
 }
 
@@ -584,8 +580,7 @@ function updateInfoCard(photoData) {
     metadataStrip.classList.add('hidden');
     exifStrip.classList.add('hidden');
 
-    const isFullInfo = settings.infoDetails === 'full';
-    if (!isFullInfo) {
+    if (settings.infoMode !== 'full') {
         return;
     }
     
@@ -696,6 +691,8 @@ function updateInfoCard(photoData) {
         exifStrip.classList.remove('hidden');
     }
 }
+
+
 
 
 
